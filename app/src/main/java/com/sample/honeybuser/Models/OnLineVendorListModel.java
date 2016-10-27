@@ -8,21 +8,25 @@ public class OnLineVendorListModel {
     private String vendor_id;
     private String name;
     private String phone_no;
-    private String static_store;
-    private String logo;
     private String business_name;
+    private String logo;
     private String latitude;
     private String longitude;
     private String distance;
     private String star_rating;
     private String rating_count;
     private String is_available;
-    private String delivery;
-    private String minimum_order;
-    private String delivery_charge;
     private String icon;
     private String time;
+    private String new_vendor;
+    private String follow;
+    /*
+    private String delivery;
+    private String minimum_order;
+    private String delivery_charge;*/
 
+
+    private String static_store;
     public String getFollow() {
         return follow;
     }
@@ -31,7 +35,7 @@ public class OnLineVendorListModel {
         this.follow = follow;
     }
 
-    private String follow;
+
 
     public String getNew_vendor() {
         return new_vendor;
@@ -41,7 +45,7 @@ public class OnLineVendorListModel {
         this.new_vendor = new_vendor;
     }
 
-    private String new_vendor;
+
 
     public String getVendor_id() {
         return vendor_id;
@@ -139,7 +143,7 @@ public class OnLineVendorListModel {
         this.is_available = is_available;
     }
 
-    public String getDelivery() {
+   /* public String getDelivery() {
         return delivery;
     }
 
@@ -161,7 +165,7 @@ public class OnLineVendorListModel {
 
     public void setDelivery_charge(String delivery_charge) {
         this.delivery_charge = delivery_charge;
-    }
+    }*/
 
     public String getIcon() {
         return icon;

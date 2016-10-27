@@ -1,6 +1,7 @@
 package com.sample.honeybuser.Activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -50,22 +51,20 @@ public class ChangeLocationActivity extends CommonActionBar implements PlaceSele
     private List<String> distanceList = new ArrayList<String>();
     private List<ChangeAddress> addressList = new ArrayList<ChangeAddress>();
     private String lat, lang;
-
-
     private Gson gson = new Gson();
-    public static String KmDistance = "0.3";
 
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setView(R.layout.activity_change_location);
-        // setContentView(R.layout.activity_change_location);
         setTitle("Change Loction");
         hideNotification();
         autocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.autocomplete_fragment);
         autocompleteFragment.setHint("Enter new address");
+        autocompleteFragment.getView().setBackground(getResources().getDrawable(R.drawable.background_edit_text));
+//        autocompleteFragment.getView().setPadding(15, 0, 15, 0);
         autocompleteFragment.setOnPlaceSelectedListener(this);
 
         /*distanceList.add("0.1");
@@ -154,11 +153,10 @@ public class ChangeLocationActivity extends CommonActionBar implements PlaceSele
                 if (response.getString("status").equalsIgnoreCase("1")) {
                     //String dis = distanceAdapter.getDistance();
                     //LatLng addres = addressAdapter.selectedPosition();
-                    ChangeLocationSingleton.getInstance().locationChanges(dragPosition, distanceAdapter.getDistance(), location);
-                    //ChangeLocationSingleton.getInstance().locationChanges(dragPosition, distanceAdapter.getDistance(), location);
+                    ChangeLocationSingleton.getInstance().locationChanges(addressAdapter.selectedPosition(), distanceAdapter.getDistance(), null);
                     // Complete.getInstance().orderCompleted();
                     //NavigationBarActivity.locationName = location;
-                    startActivity(new Intent(ChangeLocationActivity.this, DashBoardActivity.class).putExtra("lat", lat).putExtra("lang", lang));
+                    //startActivity(new Intent(ChangeLocationActivity.this, DashBoardActivity.class).putExtra("lat", lat).putExtra("lang", lang));
                     finish();
                 }
 
@@ -166,7 +164,7 @@ public class ChangeLocationActivity extends CommonActionBar implements PlaceSele
 
             @Override
             public void onError(String message, String title) {
-
+                new AlertDialogManager().showAlertDialog(ChangeLocationActivity.this, title, message, false);
             }
         });
 

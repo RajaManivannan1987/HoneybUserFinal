@@ -39,7 +39,6 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
     private String TAG = "OnLineVendorListAdapter";
     private Activity activity;
     private List<OnLineVendorListModel> list;
-    private LayoutInflater inflater;
     private String type;
 
     public OnLineVendorListAdapter(Activity context, List<OnLineVendorListModel> arraylist, String type) {
@@ -70,13 +69,18 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
             holder.onLineRatingCountTextView.setVisibility(View.GONE);
         }
         if (type.equalsIgnoreCase("0")) {
-            holder.locateImage.setVisibility(View.GONE);
+            holder.locateImage.setVisibility(View.INVISIBLE);
         }
         if (list.get(position).getFollow().startsWith("Y")) {
             holder.notifyImage.setImageResource(R.drawable.notify);
         } else {
             holder.notifyImage.setImageResource(R.drawable.nonotify);
         }
+       /* if (list.get(position).getIs_available().equalsIgnoreCase("Y")){
+            holder.vendorListOnlineImageView.setImageResource(R.drawable.on);
+        }else {
+            holder.vendorListOnlineImageView.setImageResource(R.drawable.off);
+        }*/
         holder.vendorName.setText(list.get(position).getName());
         holder.distance.setText(list.get(position).getDistance() + " Km away");
         holder.callImage.setOnClickListener(new View.OnClickListener() {
@@ -89,7 +93,6 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
             @Override
             public void onClick(View v) {
                 CommonWebserviceMethods.getVendorLocation(activity,TAG,list.get(position).getVendor_id());
-                //CommonMethods.locationDirection(activity, list.get(position).getLatitude(), list.get(position).getLongitude());
             }
         });
         holder.cv.setOnClickListener(new View.OnClickListener() {
@@ -103,50 +106,11 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
             public void onClick(View v) {
                 if (list.get(position).getFollow().equalsIgnoreCase("N")) {
                     CommonWebserviceMethods.setFollows(activity,TAG,list.get(position).getVendor_id(),type);
-                    /*GetResponseFromServer.getWebService(activity, TAG).setFollow(activity, list.get(position).getVendor_id(), new VolleyResponseListerner() {
-                        @Override
-                        public void onResponse(JSONObject response) throws JSONException {
-                            if (response.getString("status").equalsIgnoreCase("1")) {
-                                if (type.equalsIgnoreCase("0")) {
-                                    Complete.getInstance().orderCompleted();
-                                } else {
-                                    Complete.offerDialogInstance().orderCompleted();
-                                    // ActionCompletedSingleton.actionCompletedSingleton().ActionCompleted();
-
-                                }
-
-                            }
-
-                        }
-
-                        @Override
-                        public void onError(String message, String title) {
-
-                        }
-                    });*/
                 } else {
                     AlertDialogManager.listenerDialogBox(activity, "Remove!", "Remove alert?", new DialogBoxInterface() {
                         @Override
                         public void yes() {
                             CommonWebserviceMethods.removeFollows(activity,TAG,list.get(position).getVendor_id(),type);
-                            /*GetResponseFromServer.getWebService(activity, TAG).removeFollow(activity, list.get(position).getVendor_id(), new VolleyResponseListerner() {
-                                @Override
-                                public void onResponse(JSONObject response) throws JSONException {
-                                    if (response.getString("status").equalsIgnoreCase("1")) {
-                                        if (type.equalsIgnoreCase("0")) {
-                                            Complete.getInstance().orderCompleted();
-                                        } else {
-                                            //ActionCompletedSingleton.actionCompletedSingleton().ActionCompleted();
-                                            Complete.offerDialogInstance().orderCompleted();
-                                        }
-                                    }
-                                }
-
-                                @Override
-                                public void onError(String message, String title) {
-
-                                }
-                            });*/
                         }
 
                         @Override
@@ -169,7 +133,7 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
     public class CustomHolder extends RecyclerView.ViewHolder {
         public CircleImageView imageView;
         public TextView vendorName, distance, onLineRatingTextView, onLineRatingCountTextView;
-        public ImageView ratingImageView, notifyImage, callImage, locateImage;
+        public ImageView ratingImageView, notifyImage, callImage, locateImage,vendorListOnlineImageView;
         public CardView cv;
 
         public CustomHolder(View itemView) {
@@ -184,6 +148,7 @@ public class OnLineVendorListAdapter extends RecyclerView.Adapter<OnLineVendorLi
             callImage = (ImageView) itemView.findViewById(R.id.callImage);
             locateImage = (ImageView) itemView.findViewById(R.id.locateImage);
             cv = (CardView) itemView.findViewById(R.id.cv);
+            vendorListOnlineImageView= (ImageView) itemView.findViewById(R.id.vendorListOnlineImageView);
 
         }
     }
