@@ -5,14 +5,19 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageView;
 
 import com.google.gson.Gson;
 import com.sample.honeybuser.Activity.DashBoardActivity;
 import com.sample.honeybuser.Adapter.Product05SearchAdapter;
 import com.sample.honeybuser.Adapter.Product3KmSearchAdapter;
+import com.sample.honeybuser.Application.MyApplication;
 import com.sample.honeybuser.InterFaceClass.VolleyResponseListerner;
 import com.sample.honeybuser.Models.FiveKmProductSearchModel;
 import com.sample.honeybuser.Models.ThreeKmProductSearchModel;
@@ -36,10 +41,14 @@ public class ProductSearchFragment extends Fragment {
     private ArrayList<FiveKmProductSearchModel> fiveKmVendorList = new ArrayList<>();
     private Product3KmSearchAdapter adapter3Km;
     private Product05SearchAdapter adapter05km;
+    private EditText productSearch;
+    private ImageView closeButton;
     int spancount = 3;
     int spacing = 30;
     boolean includeEdge = true;
     private Gson gson = new Gson();
+
+    private String lat = "", lang = "";
 
     @Nullable
     @Override
@@ -47,6 +56,8 @@ public class ProductSearchFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_product_search, container, false);
         threeKmVendorRecyclerView = (RecyclerView) view.findViewById(R.id.threeKmVendorRecyclerView);
         fiveKmVendorRecyclerView = (RecyclerView) view.findViewById(R.id.fiveKmVendorRecyclerView);
+        productSearch = (EditText) view.findViewById(R.id.productSearch);
+        closeButton = (ImageView) view.findViewById(R.id.productCloseButton);
         threeKmVendorRecyclerView.setHasFixedSize(true);
         fiveKmVendorRecyclerView.setHasFixedSize(true);
         fiveKmVendorRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
@@ -57,6 +68,52 @@ public class ProductSearchFragment extends Fragment {
         adapter05km = new Product05SearchAdapter(getActivity(), fiveKmVendorList);
         fiveKmVendorRecyclerView.setAdapter(adapter05km);
         threeKmVendorRecyclerView.setAdapter(adapter3Km);
+
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                productSearch.setText("");
+            }
+        });
+        productSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+                charSequence = charSequence.toString().toLowerCase();
+                ArrayList<ThreeKmProductSearchModel> threeKmfilterList = new ArrayList<>();
+                ArrayList<FiveKmProductSearchModel> fiveKmfilterList = new ArrayList<>();
+                for (int j = 0; j < threeKmVendorList.size(); j++) {
+                    String threeKmText = threeKmVendorList.get(j).getBusiness_name().toLowerCase();
+                    if (threeKmText.contains(charSequence)) {
+                        threeKmfilterList.add(threeKmVendorList.get(j));
+                    }
+                }
+                for (int k = 0; k < fiveKmVendorList.size(); k++) {
+                    String fiveKmText = fiveKmVendorList.get(k).getBusiness_name().toLowerCase();
+                    if (fiveKmText.contains(charSequence)) {
+                        fiveKmfilterList.add(fiveKmVendorList.get(k));
+                    }
+                }
+                fiveKmVendorRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+                threeKmVendorRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+                adapter3Km = new Product3KmSearchAdapter(getActivity(), threeKmfilterList);
+                adapter05km = new Product05SearchAdapter(getActivity(), fiveKmfilterList);
+                fiveKmVendorRecyclerView.setAdapter(adapter05km);
+                threeKmVendorRecyclerView.setAdapter(adapter3Km);
+                adapter05km.notifyDataSetChanged();
+                adapter3Km.notifyDataSetChanged();
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
         return view;
     }
 
@@ -67,7 +124,16 @@ public class ProductSearchFragment extends Fragment {
     }
 
     private void getData() {
-        GetResponseFromServer.getWebService(getActivity(), TAG).getProductList(getActivity(), DashBoardActivity.distanceLatLng.latitude, DashBoardActivity.distanceLatLng.longitude, "0.50", new VolleyResponseListerner() {
+        if (DashBoardActivity.distanceLatLng != null) {
+            lat = String.valueOf(DashBoardActivity.distanceLatLng.latitude);
+            lang = String.valueOf(DashBoardActivity.distanceLatLng.longitude);
+        } else {
+            if (MyApplication.locationInstance().getLocation() != null) {
+                lat = String.valueOf(MyApplication.locationInstance().getLocation().getLatitude());
+                lang = String.valueOf(MyApplication.locationInstance().getLocation().getLongitude());
+            }
+        }
+        GetResponseFromServer.getWebService(getActivity(), TAG).getProductList(getActivity(), lat, lang, "0.50", new VolleyResponseListerner() {
             @Override
             public void onResponse(JSONObject response) throws JSONException {
                 threeKmVendorList.clear();
@@ -89,7 +155,7 @@ public class ProductSearchFragment extends Fragment {
     }
 
     private void getFiveKmProductList() {
-        GetResponseFromServer.getWebService(getActivity(), TAG).getProductList(getActivity(), DashBoardActivity.distanceLatLng.latitude, DashBoardActivity.distanceLatLng.longitude, "3.00", new VolleyResponseListerner() {
+        GetResponseFromServer.getWebService(getActivity(), TAG).getProductList(getActivity(), lat, lang, "3.00", new VolleyResponseListerner() {
             @Override
             public void onResponse(JSONObject response) throws JSONException {
                 fiveKmVendorList.clear();

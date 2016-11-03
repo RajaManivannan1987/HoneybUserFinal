@@ -1,22 +1,23 @@
 package com.sample.honeybuser.Fragment;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -29,15 +30,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.gson.Gson;
 import com.sample.honeybuser.Activity.DashBoardActivity;
-import com.sample.honeybuser.Adapter.OnLineVendorListAdapter;
+import com.sample.honeybuser.Activity.VendorDetailActivity;
 import com.sample.honeybuser.Application.MyApplication;
 import com.sample.honeybuser.InterFaceClass.ChangeLocationListener;
-import com.sample.honeybuser.InterFaceClass.SaveCompletedInterface;
+import com.sample.honeybuser.InterFaceClass.TouchInterface;
 import com.sample.honeybuser.InterFaceClass.VolleyResponseListerner;
 import com.sample.honeybuser.MapIntegration.MapAddMarker;
 import com.sample.honeybuser.MapIntegration.MapUtils;
 import com.sample.honeybuser.MapIntegration.TouchableWrapper;
-import com.sample.honeybuser.Models.OnLineVendorListModel;
 import com.sample.honeybuser.Models.Vendor;
 import com.sample.honeybuser.R;
 import com.sample.honeybuser.Singleton.ChangeLocationSingleton;
@@ -45,6 +45,7 @@ import com.sample.honeybuser.Singleton.Complete;
 import com.sample.honeybuser.Utility.Fonts.CommonUtilityClass.CommonMethods;
 import com.sample.honeybuser.Utility.Fonts.WebServices.ConstandValue;
 import com.sample.honeybuser.Utility.Fonts.WebServices.GetResponseFromServer;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -53,6 +54,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import de.hdodenhof.circleimageview.CircleImageView;
+
+import static com.google.android.gms.maps.GoogleMap.OnCameraMoveListener;
+import static com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 
 /**
  * Created by IM0033 on 10/6/2016.
@@ -66,12 +72,14 @@ public class OnLineMapFragment extends Fragment {
     private MapAddMarker mapAddMarker;
     private List<Vendor> listVendor = new ArrayList<Vendor>();
     private boolean isMove = false;
-    private String distance = "5.0", previousDistance = "5.0";
+    private String distance = "5.0", previousDistance = "5.0", vendorId, callPhone;
     private boolean flagIsOnTouched = true;
-    private LatLng location = new LatLng(0d, 0d);
+    private LatLng location;
     private String adres = "";
-
-    private List<OnLineVendorListModel> list = new ArrayList<OnLineVendorListModel>();
+    private LinearLayout vendorItemLinearLayout, vendorItemBackgroundLinearLayout;
+    private RelativeLayout mapRelativeLayout;
+    private TextView vendorNameTextView;
+    private CircleImageView vendorLogoCircleImageView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -79,52 +87,96 @@ public class OnLineMapFragment extends Fragment {
         mapFrameLayout = (FrameLayout) view.findViewById(R.id.mapFrameLayout);
         touchFrameLayout = (TouchableWrapper) view.findViewById(R.id.onlineMapFragmentTouchableWrapper);
         mapView = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.mapFragment);
+        vendorItemLinearLayout = (LinearLayout) view.findViewById(R.id.mobileStoreFragmentVendorbackGroundLinearLayout);
+        vendorItemBackgroundLinearLayout = (LinearLayout) view.findViewById(R.id.mobileStoreFragmentVendorLinearLayout);
+        mapRelativeLayout = (RelativeLayout) view.findViewById(R.id.mobileStoreFragmentLocationMapRelativeLayout);
+        vendorNameTextView = (TextView) view.findViewById(R.id.mobileStoreFragmentVendorNameShopTextView);
+        vendorLogoCircleImageView = (CircleImageView) view.findViewById(R.id.mobileStoreFragmentVendorCircleImageView);
 
+
+        touchFrameLayout.setTouchInterface(new TouchInterface() {
+            @Override
+            public void onPressed() {
+                flagIsOnTouched = false;
+                isMove = false;
+                hideVendorItem();
+            }
+
+            @Override
+            public void onReleased() {
+                flagIsOnTouched = true;
+                if (isMove) {
+                    DashBoardActivity.distanceLatLng = googleMap.getCameraPosition().target;
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            getVendorLocation();
+                        }
+                    }, 50);
+
+                    getMarkerMovedAddress(googleMap.getCameraPosition().target);
+                    Complete.offerDialogInstance().orderCompleted();
+                }
+                isMove = false;
+            }
+
+            @Override
+            public void onMove() {
+
+            }
+        });
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(final GoogleMap googleMap) {
                 setMapView(googleMap);
                 enableMyLocation();
-
+                Log.d("OnLineMapFragment", "onMapReady");
                 mapAddMarker = new MapAddMarker(getActivity(), googleMap);
 
-                googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                googleMap.setOnMarkerClickListener(new OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
                         setVendorDetailsItem(getVendorByMarkerId(marker.getId()));
+                        Log.d("OnLineMapFragment", "setOnMarkerClickListener");
                         return true;
                     }
                 });
-                googleMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
+                googleMap.setOnCameraMoveListener(new OnCameraMoveListener() {
                     @Override
                     public void onCameraMove() {
                         isMove = true;
+                        //Log.d("volleyPostData", "onCameraMove");
                     }
                 });
                 if (MyApplication.locationInstance() != null && MyApplication.locationInstance().getLocation() != null) {
+                    Log.d("OnLineMapFragment", "MylocationInstance");
                     location = new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLongitude());
-                    CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(location, 15);
+                    CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(location, 14);
+                    googleMap.animateCamera(yourLocation);
                     flagIsOnTouched = false;
                     googleMap.animateCamera(yourLocation, new GoogleMap.CancelableCallback() {
                         @Override
                         public void onFinish() {
                             flagIsOnTouched = true;
+                            Log.d("OnLineMapFragment", "onFinish");
                         }
 
                         @Override
                         public void onCancel() {
-                            flagIsOnTouched = true;
+                            flagIsOnTouched = false;
+                            Log.d("OnLineMapFragment", "onCancel");
                         }
                     });
                     googleMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
                         @Override
                         public void onCameraChange(CameraPosition cameraPosition) {
-                            if (mapAddMarker != null) {
+                            if (mapAddMarker != null)
                                 mapAddMarker.moveCircle(cameraPosition.target);
-                                if (flagIsOnTouched) {
-                                    getVendorLocation();
-                                    getMarkerMovedAddress(cameraPosition.target);
-                                }
+                            if (flagIsOnTouched) {
+                                // getVendorLocation();
+                                // getMarkerMovedAddress(cameraPosition.target);
+                                Log.d("OnLineMapFragment", "onCameraChange");
                             }
                         }
                     });
@@ -134,6 +186,8 @@ public class OnLineMapFragment extends Fragment {
                             location = new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLongitude());
                             CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(location, MapUtils.calculateZoomLevel(getActivity(), 15));
                             googleMap.animateCamera(yourLocation);
+                            //getVendorLocation();
+                            Log.d("OnLineMapFragment", "onMyLocationButtonClick");
                             return false;
 
                         }
@@ -143,16 +197,18 @@ public class OnLineMapFragment extends Fragment {
         });
         ChangeLocationSingleton.getInstance().setChangeLocationListener(new ChangeLocationListener() {
             @Override
-            public void locationChanged(LatLng latLng, String distance, String address) {
+            public void locationChanged(LatLng latLng, String distance, String address, String classType) {
+
+                Log.d("OnLineMapFragment", classType);
                 if (latLng != null) {
                     if (googleMap != null) {
                         googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                        DashBoardActivity.distanceLatLng = latLng;
                     }
                 }
 
                 if (distance != null && !distance.equalsIgnoreCase("")) {
                     OnLineMapFragment.this.distance = distance;
-                    Log.d(TAG, distance);
                     if (mapAddMarker != null) {
                         mapAddMarker.radiCircle(Float.parseFloat(distance) * 1000);
                     }
@@ -162,31 +218,63 @@ public class OnLineMapFragment extends Fragment {
                         }
                     }
                     previousDistance = distance;
-                    // distanceTextView.setText(" " + distance + " km ");
-                } else {
-                    //distanceTextView.setText(" " + distance + " km ");
                 }
-                /*if (address != null && !address.equalsIgnoreCase("")) {
-                    locationTextView.setText(address);
-                }*/
+
             }
         });
 
         return view;
     }
 
-    private void getVendorLocation() {
-        if (googleMap != null && googleMap.getCameraPosition() != null) {
-            LatLng location = googleMap.getCameraPosition().target;
-            if (location != null) {
-                getVendorLocationWebService(location);
-            }
-        }
-
+    private void hideVendorItem() {
+        //mapAddMarker.removeAll();
+        vendorItemLinearLayout.setVisibility(View.GONE);
+        vendorItemBackgroundLinearLayout.setVisibility(View.GONE);
     }
 
-    private void getVendorLocationWebService(LatLng location) {
-        GetResponseFromServer.getWebService(getActivity(), TAG).getOnlineVendor(getActivity(), String.valueOf(location.latitude), String.valueOf(location.longitude), "online", new VolleyResponseListerner() {
+    private void getVendorLocation() {
+        Log.d("OnLineMapFragment", "getVendorLocation");
+
+        if (DashBoardActivity.distanceLatLng != null) {
+            LatLng location1 = DashBoardActivity.distanceLatLng;
+            if (location1 != null) {
+                Log.d("OnLineMapFragment", "getVendorLocation +location1 ");
+                getVendorLocationWebService(location1);
+                ChangeLocationSingleton.getInstance().locationChanges(location1, null, null, "OnLineMapFragment");
+
+            }
+        } else {
+            if (MyApplication.locationInstance().getLocation() != null) {
+                location = new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLongitude());
+                getVendorLocationWebService(location);
+                ChangeLocationSingleton.getInstance().locationChanges(location, null, null, "OnLineMapFragment");
+
+                Log.d("OnLineMapFragment", "getVendorLocation +location ");
+            }
+        }
+       /* if (googleMap.getCameraPosition() != null) {
+            LatLng location1 = googleMap.getCameraPosition().target;
+            if (location1 != null) {
+                getVendorLocationWebService(location1);
+            }
+        } else {
+            // } else {
+            if (MyApplication.locationInstance().getLocation() != null) {
+                location = new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLongitude());
+                getVendorLocationWebService(location);
+            }
+        }*/
+    }
+
+    private void getVendorLocationWebService(final LatLng loc) {
+
+       /* if (isMove) {
+            Log.d("volleyPostData", "getVendorLocationWebService + isMove");
+            DashBoardActivity.distanceLatLng = new LatLng(loc.latitude, loc.longitude);
+            Complete.offerDialogInstance().orderCompleted();
+        }*/
+
+        GetResponseFromServer.getWebService(getActivity(), TAG).getOnlineVendor(getActivity(), String.valueOf(loc.latitude), String.valueOf(loc.longitude), "online", new VolleyResponseListerner() {
             @Override
             public void onResponse(JSONObject response) throws JSONException {
                 urlResponse(response);
@@ -197,8 +285,8 @@ public class OnLineMapFragment extends Fragment {
 
             }
         });
-
     }
+
 
     private void urlResponse(JSONObject response) throws JSONException {
         JSONArray jsonArrayVendor = response.getJSONObject("data").getJSONArray("online");
@@ -207,17 +295,14 @@ public class OnLineMapFragment extends Fragment {
             Vendor vendor = new Gson().fromJson(jsonArrayVendor.getJSONObject(i).toString(), Vendor.class);
             listVendor.add(vendor);
         }
-        // if (dashBoardViewPager.getVisibility() != View.VISIBLE) {
-        ChangeLocationSingleton.getInstance().locationChanges(null, response.getJSONObject("data").getString("distance"), null);
-
-        //} else {
-//            getMarkerMovedAddress(new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLatitude()));
-        // }
+        OnLineMapFragment.this.distance = response.getJSONObject("data").getString("distance");
+        //By Raja
+        ChangeLocationSingleton.getInstance().locationChanges(null, response.getJSONObject("data").getString("distance"), null, "OnLineMap");
 
         if (googleMap != null) {
             mapAddMarker.setGoogleMap(googleMap);
             mapAddMarker.addAllMarkLocationMap(listVendor);
-//                            mapAddMarker.moveCircle(location);
+//            mapAddMarker.moveCircle(location);
         }
     }
 
@@ -225,6 +310,7 @@ public class OnLineMapFragment extends Fragment {
         Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
         if (geocoder.isPresent()) {
             try {
+                DashBoardActivity.distanceLatLng = target;
                 List<Address> addresses = geocoder.getFromLocation(target.latitude, target.longitude, 1);
                 if (addresses != null && addresses.size() > 0) {
                     if (addresses.get(0).getSubLocality() != null && !addresses.get(0).getSubLocality().equalsIgnoreCase(""))
@@ -237,10 +323,32 @@ public class OnLineMapFragment extends Fragment {
                 Log.e(TAG, e.getMessage());
             }
         }
-        //ChangeLocationSingleton.getInstance().locationChanges("", "", adres);
+        Log.d("OnLineMapFragment", "getMarkerMovedAddress +ChangeLocationSingleton");
+        ChangeLocationSingleton.getInstance().locationChanges(null, null, adres, "OnLineMapFragment");
+        Log.d(TAG, adres);
     }
 
-    private void setVendorDetailsItem(Vendor vendorByMarkerId) {
+    private void setVendorDetailsItem(Vendor vendor) {
+        if (vendor != null) {
+            vendorItemLinearLayout.setVisibility(View.VISIBLE);
+            vendorItemBackgroundLinearLayout.setVisibility(View.VISIBLE);
+            if (vendor.getLogo() != null)
+                Picasso.with(getActivity()).load(vendor.getLogo()).into(vendorLogoCircleImageView);
+            vendorNameTextView.setText(vendor.getName());
+            /*if (vendor.getStar_rating() != null)
+                vendorRatingBar.setRating(Float.parseFloat(vendor.getStar_rating()));
+            else
+                vendorRatingBar.setRating(0);
+*/
+            callPhone = vendor.getPhone_no();
+            vendorId = vendor.getVendor_id();
+            vendorItemBackgroundLinearLayout.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(getActivity(), VendorDetailActivity.class).putExtra("vendor_id", vendorId));
+                }
+            });
+        }
 
     }
 
@@ -284,9 +392,21 @@ public class OnLineMapFragment extends Fragment {
 
     @Override
     public void onResume() {
+        //getVendorLocation();
         super.onResume();
 
     }
 
-
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            getVendorLocation();
+        }
+//        if (isVisibleToUser && DashBoardActivity.distanceLatLng == null) {
+//            getMarkerMovedAddress(googleMap.getCameraPosition().target);
+//        } else if (getActivity() != null) {
+//            getMarkerMovedAddress(new LatLng(MyApplication.locationInstance().getLocation().getLatitude(), MyApplication.locationInstance().getLocation().getLongitude()));
+//        }
+    }
 }
