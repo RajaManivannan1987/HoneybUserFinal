@@ -80,7 +80,7 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
             }
         };
         timer = new Timer();
-        timer.schedule(timerTask, 01, 30000);
+        timer.schedule(timerTask, 01, 500000);
 
     }
 
@@ -131,7 +131,6 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
 

@@ -81,7 +81,13 @@ public class VendorListFragment extends Fragment {
         Complete.offerDialogInstance().setListener(new SaveCompletedInterface() {
             @Override
             public void completed() {
-                getData();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getData();
+                    }
+                });
+
             }
         });
 
@@ -108,14 +114,13 @@ public class VendorListFragment extends Fragment {
             }
         }
 
-        Log.d(TAG, assress);
+//        Log.d(TAG, assress);
     }
 
     @Override
     public void onResume() {
-        getData();
         super.onResume();
-
+        getData();
     }
 
     @Override

@@ -112,7 +112,7 @@ public class GetResponseFromServer {
             jsonObject.put("latitude", latitude);
             jsonObject.put("longitude", longitude);
             jsonObject.put("os_type", "android");
-            jsonObject.put("type", type);
+            jsonObject.put("status", type);
             jsonObject.put("language", session.getLanguage());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -323,7 +323,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse(context, ConstandValue.SERVER_URL + "vendor/product_search", listerner, jsonObject);
+        setResponse1(context, ConstandValue.SERVER_URL + "vendor/product_search", listerner, jsonObject);
     }
 
     public void getSearchVendorList(Context context, String latitude, String longitude, VolleyResponseListerner listerner) {
@@ -337,7 +337,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse1(context, ConstandValue.SERVER_URL + "vendor/search_api", listerner, jsonObject);
+        setResponse(context, ConstandValue.SERVER_URL + "vendor/search_api", listerner, jsonObject);
     }
 
     public void addRating(Context context, String vendorId, String rating, String review, VolleyResponseListerner listerner) {
@@ -351,7 +351,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse(context, ConstandValue.SERVER_URL + "vendor/add_rating", listerner, jsonObject);
+        setResponse1(context, ConstandValue.SERVER_URL + "vendor/add_rating", listerner, jsonObject);
     }
 
     public void getBusinessVendorList(Context context, String latitude, String longitude, String distance, String business_id, final VolleyResponseListerner listerner) {
