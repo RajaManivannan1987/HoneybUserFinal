@@ -85,7 +85,7 @@ public class OffLineVendorFragment extends Fragment {
                 lang = String.valueOf(MyApplication.locationInstance().getLocation().getLongitude());
             }
 
-            GetResponseFromServer.getWebService(getActivity(), TAG).geOfflineVendor(getActivity(), lat, lang, "0", new VolleyResponseListerner() {
+           /* GetResponseFromServer.getWebService(getActivity(), TAG).geOfflineVendor(getActivity(), lat, lang, "0", new VolleyResponseListerner() {
                 @Override
                 public void onResponse(JSONObject response) throws JSONException {
                     list.clear();
@@ -108,7 +108,7 @@ public class OffLineVendorFragment extends Fragment {
                 public void onError(String message, String title) {
 
                 }
-            });
+            });*/
         } else {
             CommonMethods.toast(getActivity(), "Location is null");
         }

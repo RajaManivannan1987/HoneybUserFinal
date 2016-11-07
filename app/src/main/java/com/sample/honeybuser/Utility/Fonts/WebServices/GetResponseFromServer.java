@@ -101,10 +101,10 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        setResponse1(context, ConstandValue.SERVER_URL + "vendor/list_api", listerner, jsonObject);
+        setResponse(context, ConstandValue.SERVER_URL + "vendor/list_api", listerner, jsonObject);
     }
 
-    public void geOfflineVendor(Context context, String latitude, String longitude, String type, final VolleyResponseListerner listerner) {
+    public void getOnlineVendor1(Context context, String latitude, String longitude, String type, final VolleyResponseListerner listerner) {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("user_id", session.getUserId());
@@ -260,7 +260,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse(context, ConstandValue.SERVER_URL + "vendor/details_api", listerner, jsonObject);
+        setResponse1(context, ConstandValue.SERVER_URL + "vendor/details_api", listerner, jsonObject);
 
     }
 
@@ -286,6 +286,18 @@ public class GetResponseFromServer {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
         setResponse1(context, ConstandValue.SERVER_URL + "user/update_language", listerner, jsonObject);
+    }
+
+    public void getSettings(Context context, VolleyResponseListerner listerner) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("user_id", session.getUserId());
+            jsonObject.put("api_key", session.getApiKey());
+
+        } catch (JSONException e) {
+            Log.e(TAG + " " + TAG, e.getMessage());
+        }
+        setResponse(context, ConstandValue.SERVER_URL + "user/get_settings_api", listerner, jsonObject);
     }
 
     public void getVendorLocation(Context context, String vendorId, VolleyResponseListerner listerner) {
@@ -323,7 +335,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse1(context, ConstandValue.SERVER_URL + "vendor/product_search", listerner, jsonObject);
+        setResponse(context, ConstandValue.SERVER_URL + "vendor/product_search", listerner, jsonObject);
     }
 
     public void getSearchVendorList(Context context, String latitude, String longitude, VolleyResponseListerner listerner) {
@@ -337,7 +349,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse(context, ConstandValue.SERVER_URL + "vendor/search_api", listerner, jsonObject);
+        setResponse1(context, ConstandValue.SERVER_URL + "vendor/search_api", listerner, jsonObject);
     }
 
     public void addRating(Context context, String vendorId, String rating, String review, VolleyResponseListerner listerner) {
@@ -351,7 +363,7 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             Log.e(TAG + " " + TAG, e.getMessage());
         }
-        setResponse1(context, ConstandValue.SERVER_URL + "vendor/add_rating", listerner, jsonObject);
+        setResponse(context, ConstandValue.SERVER_URL + "vendor/add_rating", listerner, jsonObject);
     }
 
     public void getBusinessVendorList(Context context, String latitude, String longitude, String distance, String business_id, final VolleyResponseListerner listerner) {
@@ -367,7 +379,19 @@ public class GetResponseFromServer {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        setResponse(context, ConstandValue.SERVER_URL + "vendor/business_vendors", listerner, jsonObject);
+        setResponse1(context, ConstandValue.SERVER_URL + "vendor/business_vendors", listerner, jsonObject);
+    }
+
+    public void updateNotificationRange(Context context, String distance, final VolleyResponseListerner listerner) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("user_id", session.getUserId());
+            jsonObject.put("api_key", session.getApiKey());
+            jsonObject.put("distance", distance);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        setResponse(context, ConstandValue.SERVER_URL + "user/update_notification_range", listerner, jsonObject);
     }
 
     private void setResponse(Context context, String url, final VolleyResponseListerner listerner, JSONObject jsonObject) {

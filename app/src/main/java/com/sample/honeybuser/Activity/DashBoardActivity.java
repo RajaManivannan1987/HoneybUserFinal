@@ -11,6 +11,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 
 
 import com.google.android.gms.maps.model.LatLng;
@@ -24,7 +25,6 @@ import com.sample.honeybuser.InterFaceClass.VolleyResponseListerner;
 import com.sample.honeybuser.MapIntegration.MapAddMarker;
 import com.sample.honeybuser.Models.Vendor;
 import com.sample.honeybuser.R;
-import com.sample.honeybuser.Singleton.ChangeLocationSingleton;
 import com.sample.honeybuser.Singleton.Complete;
 import com.sample.honeybuser.Utility.Fonts.CommonUtilityClass.CommonMethods;
 import com.sample.honeybuser.Utility.Fonts.CustomViewPager;
@@ -57,6 +57,7 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
     public static String locationName;
     private TimerTask timerTask;
     private Timer timer;
+    private ImageView refreshImageView;
 
 
     public void setFragmentType(FragmentType fragmentType) {
@@ -65,6 +66,7 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
 
     private void onLine() {
         setFragmentType(FragmentType.ONLINE);
+        refreshImageView.setVisibility(View.VISIBLE);
         listVendor.clear();
         timerTask = new TimerTask() {
             @Override
@@ -80,12 +82,19 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
             }
         };
         timer = new Timer();
-        timer.schedule(timerTask, 01, 500000);
+        timer.schedule(timerTask, 01, 30000);
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
     }
 
     private void offLine() {
         setFragmentType(FragmentType.OFFLINE);
+        refreshImageView.setVisibility(View.GONE);
         listVendor.clear();
         if (timer != null) {
             Log.d("volleyPostData", "Timer cancel");
@@ -102,6 +111,8 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
         //setSelectTab("dashboard");
         setSelected(Selected.DASHBOARD);
         enableMyLocation();
+
+        refreshImageView = (ImageView) findViewById(R.id.refreshImageView);
         tabLayout = (TabLayout) findViewById(R.id.dashboardMapActivityTabLayout);
         dashBoardViewPager = (CustomViewPager) findViewById(R.id.dashBoardViewPager);
         onlineTab = tabLayout.newTab().setText(CommonMethods.getTabHeading(DashBoardActivity.this, FragmentType.ONLINE, true));
@@ -113,6 +124,13 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
         dashBoardViewPager.setCurrentItem(0);
         dashBoardViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.setOnTabSelectedListener(this);
+        refreshImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Complete.offerDialogInstance().orderCompleted();
+            }
+        });
+
         onLine();
 
     }
@@ -158,7 +176,6 @@ public class DashBoardActivity extends NavigationBarActivity implements TabLayou
                 onLine();
                 onlineTab.setText(CommonMethods.getTabHeading(DashBoardActivity.this, FragmentType.ONLINE, true));
                 offlineTab.setText(CommonMethods.getTabHeading(DashBoardActivity.this, FragmentType.OFFLINE, false));
-
                 break;
             case 1:
                 offLine();
